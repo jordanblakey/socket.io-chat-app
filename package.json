@@ -1,0 +1,27 @@
+{
+  "name": "socket.io-chat-app",
+  "version": "1.0.0",
+  "description": " real-time chat application using socket.io, Node.js and Express",
+  "main": "\u001b[A\u001b[B\u001b[B\u001b[B\u001b[B\u001b[B",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jordanblakey/socket.io-chat-app.git"
+  },
+  "keywords": [
+    "socket.io",
+    "chat"
+  ],
+  "author": "Jordan Blakey",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jordanblakey/socket.io-chat-app/issues"
+  },
+  "homepage": "https://github.com/jordanblakey/socket.io-chat-app#readme",
+  "devDependencies": {
+    "express": "^4.15.3",
+    "socket.io": "^2.0.3"
+  }
+}
