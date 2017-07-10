@@ -12,7 +12,19 @@
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.99.0/css/materialize.min.css">
 	<style>
 		body {
-			margin-top: 30px;
+			padding-top: 30px;
+		}
+
+		#messageArea {
+			display: none;
+		}
+
+		#messageArea h5 {
+			margin-top: 0;
+		}
+
+		#messageForm {
+			margin-top: 40px;
 		}
 
 		#users a {
@@ -27,69 +39,149 @@
 		#chat .material-icons {
 			vertical-align: middle;
 		}
+
+		.speech {
+			position: relative;
+			right: 0;
+			text-align: right;
+		}
+
+		.speech span {
+			display: block;
+			margin: 5px 10px 0 10px;
+			color: #ccc;
+		}
+
+		.chip {
+			margin-right: 0;
+		}
+
+		.active-user-text {
+			text-align: left;
+		}
+
+		.active-user-text .chip {
+			background: rgba(3, 155, 229, .3);
+			/* color: white; */
+		}
 	</style>
 
 	<!-- Compiled and minified JavaScript -->
 	<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.99.0/js/materialize.min.js"></script>
 	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
-	<title>Socket.io Chat App</title>
+	<title>Socket Chat</title>
 </head>
 
 <body>
 	<div class="container">
-		<h3>Socket.io Chat App</h1>
+		<div class="row">
+			<div class="col s12">
+				<h3>Socket Chat</h1>
+        </div>
+      </div>
 
-      <div class="row" id="messageArea">
-        <div class="col m4 s12">
-          <div class="card" id="users">
-            <div class="card-content">
-              <span class="card-title">Online Users</span>
-                  <p>
-                    <a><i class="material-icons">perm_identity</i> Username</a>
-                  </p>
+<!-- Authentication -->
+      <div id="userFormArea" class="row">
+        <div class="col s12">
+          <form id="userForm">
+            <div class="input-field">
+              <input placeholder="Type a username..." id="username" type="text" class="validate">
+              <label for="username">Username</label>
             </div>
-          </div>
+            <input type="submit" value="Start Chat" class="waves-effect waves-light btn right"></input>
+          </form>
+          <br style="clear:both;">
+        </div>
+      </div>
+
+
+<!-- Application -->
+      <div class="row" id="messageArea">
+        <div class="col m4 s12" id="users">
+          <h5>Online</h5>
+          <p>
+            <a><i class="material-icons">perm_identity</i> Username</a>
+          </p>
         </div>
         <div class="col m8 s12">
-              <div id="chat"></div>
-              <form id="messageForm">
-                <div class="input-field col s12">
-                  <textarea id="message" class="materialize-textarea"></textarea>
-                  <label for="message">Message</label>
-                </div>
-                <input type="submit" value="send" class="waves-effect waves-light btn right"></input>
-              </form>
-              <br style="clear:both;">
+          <h5>Chat</h5>
+          <div id="chat"></div>
+          <form id="messageForm">
+            <div class="input-field">
+              <input placeholder="Type a message..." id="message" type="text" class="validate">
+              <label for="message">Message</label>
+            </div>
+            <input type="submit" value="send" class="waves-effect waves-light btn right"></input>
+          </form>
+          <br style="clear:both;">
         </div>
       </div>
     </div>
     <script type="text/javascript">
-      // Materialize Main Text area init
-      // $('#message').val('Start typing...');
-      $('#message').trigger('autoresize');
 
-      // Socket.io
-      $(function(){
-        var socket = io.connect();
-        var $messageForm = $('#messageForm');
-        var $message = $('#message');
-        var $chat = $('#chat');
+    // Socket.io Form Handling (jQuery)
+    $(function(){
+      var socket = io.connect();
 
-        $messageForm.submit(function(e){
-          e.preventDefault();
-          // console.log('Submitted');
-          socket.emit('send message', $message.val());
-          $message.val('');
+      // Chat Panel
+      var $messageArea = $('#messageArea');
+      var $messageForm = $('#messageForm');
+      var $message = $('#message');
+      var $chat = $('#chat');
+
+      // Users Panel
+      var $userFormArea = $('#userFormArea');
+      var $userForm = $('#userForm');
+      var $users = $('#users');
+      var $username = $('#username');
+      var $activeUser = 'init';
+
+      // Login Form
+      $userForm.submit(function(e){
+        e.preventDefault();
+        socket.emit('new user', $username.val(), function(data){
+          if (data) {
+            $userFormArea.hide();
+            $messageArea.show();
+          }
         });
+        $activeUser = $username.val().replace(/\s/g,'');
+        console.log('activeUser: ' + $activeUser);
+        $username.val('');
+      });
 
-        // socket.on('new message', function(data){
-        //   $chat.append('<div class="card"><div class="card-content"><p><i class="material-icons">perm_identity</i> ' +data.msg+ '</p></div></div>');
-        // });
-        socket.on('new message', function(data){
-          $chat.append('<div class="chip"><i class="material-icons">perm_identity</i> ' +data.msg+ '</div><br>');
+      // Populate Users
+      socket.on('get users', function(data){
+        var html = '';
+        for(i = 0; i < data.length; i++){
+          if (data[i].replace(/\s/g,'') == $activeUser.replace(/\s/g,'')) {
+            html = '<a><b><i class="material-icons">assignment_ind</i> '+data[i]+'</b></a>' + html;
+          } else {
+            html += '<a><i class="material-icons">perm_identity</i> '+data[i]+'</a>';
+          }
+        }
+        $users.html(html);
+      });
+
+      // Send Message
+      $messageForm.submit(function(e){
+        e.preventDefault();
+        var messageString = '<div class="speech '+$activeUser+'"><span>'+$activeUser+'</span><div class="chip">' +$message.val()+ '</div></div><br>';
+        socket.emit('send message', messageString);
+        $message.val('');
+      });
+
+      socket.on('new message', function(data){
+        $chat.append(data.msg);
+        $(".speech").each(function(index) {
+          if ($(this).hasClass($activeUser)){
+            $(this).addClass("active-user-text");
+          }
         });
       });
+
+    });
     </script>
   </body>
   </html>
